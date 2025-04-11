@@ -1,0 +1,39 @@
+[package]
+name = "wasm-proxy-app"
+version = "0.1.0"
+edition = "2021"
+description = "A WASM application that executes a .bin file and proxies output via HTTPS"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2.84"
+js-sys = "0.3.61"
+wasm-bindgen-futures = "0.4.34"
+console_error_panic_hook = "0.1.7"
+serde = { version = "1.0", features = ["derive"] }
+serde-wasm-bindgen = "0.4"
+
+[dependencies.web-sys]
+version = "0.3.61"
+features = [
+  "console",
+  "Window",
+  "Document",
+  "Element",
+  "HtmlElement",
+  "Node",
+  "Response",
+  "Request",
+  "RequestInit",
+  "Headers",
+  "Blob",
+  "BlobPropertyBag",
+  "Url",
+  "Worker",
+  "MessageEvent",
+  "DedicatedWorkerGlobalScope",
+  "Storage",
+  "SessionStorage"
+]

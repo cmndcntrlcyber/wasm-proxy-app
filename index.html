@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WASM Proxy Application</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #output {
+            white-space: pre-wrap;
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            min-height: 100px;
+        }
+        .status {
+            margin-top: 10px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <h1>WASM Proxy Application</h1>
+    <p>This application implements a stealth attack sequence using WebAssembly.</p>
+    
+    <div class="container">
+        <h2>Execute Attack Sequence</h2>
+        <p>When executed, this application will:</p>
+        <ol style="text-align: left; margin-left: 20px;">
+            <li>Cache dictionary.txt from remote server</li>
+            <li>Download payload as byte string</li>
+            <li>Decode payload using dictionary</li>
+            <li>Execute decoded shellcode in memory</li>
+        </ol>
+        <button id="executeBtn">Execute</button>
+        <div class="status" id="status"></div>
+    </div>
+    
+    <div class="container">
+        <h2>Output</h2>
+        <div id="output">Results will appear here...</div>
+    </div>
+
+    <script>
+        // The actual JavaScript will be loaded by webpack
+        // This is just a placeholder for the HTML structure
+    </script>
+</body>
+</html>
