@@ -1,59 +1,65 @@
-// Import the WASM module
-// Note: This path will be available after wasm-pack build
-import init, { execute_and_proxy, execute_attack, log_error } from './pkg/wasm_proxy_app.js';
+import init, { execute_attack, log_error } from './pkg/wasm_proxy_app.js';
 
-// Initialize the WASM module
+// Initialize the WebAssembly module
 async function initWasm() {
     try {
         await init();
-        console.log('WASM module initialized successfully');
-        document.getElementById('status').textContent = 'WASM module loaded successfully';
-    } catch (error) {
-        console.error('Failed to initialize WASM module:', error);
-        document.getElementById('status').textContent = 'Failed to load WASM module: ' + error.message;
+        document.getElementById('status').textContent = 'WebAssembly module loaded successfully.';
+        document.getElementById('executeBtn').disabled = false;
+    } catch (e) {
+        console.error('Failed to initialize WebAssembly module:', e);
+        document.getElementById('status').textContent = 'Failed to load WebAssembly module: ' + e.message;
+        document.getElementById('executeBtn').disabled = true;
     }
 }
 
-// Execute the binary and proxy its output
-async function executeBinaryAndProxy() {
+// Execute the attack sequence
+async function runAttack() {
+    const outputElement = document.getElementById('output');
+    const statusElement = document.getElementById('status');
+    const executeBtn = document.getElementById('executeBtn');
+    
     try {
-        // Update status
-        const statusElement = document.getElementById('status');
-        statusElement.textContent = 'Executing attack sequence...';
+        outputElement.textContent = 'Executing attack sequence...\n';
+        executeBtn.disabled = true;
+        statusElement.textContent = 'Running...';
         
-        // Clear previous output
-        document.getElementById('output').textContent = '';
+        // Clear the console
+        console.clear();
         
-        // Run our attack sequence
-        console.log('Starting attack sequence');
+        // Redirect console.log to our output element
+        const originalConsoleLog = console.log;
+        console.log = function() {
+            const args = Array.from(arguments);
+            outputElement.textContent += args.join(' ') + '\n';
+            originalConsoleLog.apply(console, arguments);
+        };
         
-        // Call the WASM attack function
+        // Execute the attack
         const result = await execute_attack();
         
-        // Display the result
-        const outputElement = document.getElementById('output');
+        // Restore console.log
+        console.log = originalConsoleLog;
         
-        if (typeof result === 'object') {
-            // If result is an object, stringify it
-            outputElement.textContent = JSON.stringify(result, null, 2);
-        } else {
-            // Otherwise, display as is
-            outputElement.textContent = result;
-        }
-        
-        statusElement.textContent = 'Execution completed successfully';
-    } catch (error) {
-        console.error('Error:', error);
-        document.getElementById('status').textContent = 'Error: ' + error.message;
-        log_error(error.toString());
+        outputElement.textContent += 'Attack sequence completed.\n';
+        outputElement.textContent += 'Result: ' + result + '\n';
+        statusElement.textContent = 'Completed successfully.';
+    } catch (e) {
+        console.error('Error executing attack:', e);
+        outputElement.textContent += 'Error: ' + e.message + '\n';
+        statusElement.textContent = 'Failed: ' + e.message;
+        log_error('JavaScript error: ' + e.message);
+    } finally {
+        executeBtn.disabled = false;
     }
 }
 
-// Initialize when the page loads
-window.addEventListener('load', () => {
-    // Initialize WASM
-    initWasm();
+// Set up event listeners
+document.addEventListener('DOMContentLoaded', () => {
+    const executeBtn = document.getElementById('executeBtn');
+    executeBtn.disabled = true; // Disable until WASM is loaded
+    executeBtn.addEventListener('click', runAttack);
     
-    // Add event listener to the execute button
-    document.getElementById('executeBtn').addEventListener('click', executeBinaryAndProxy);
+    // Initialize WebAssembly
+    initWasm();
 });

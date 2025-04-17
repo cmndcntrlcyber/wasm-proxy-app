@@ -34,6 +34,5 @@ features = [
   "Worker",
   "MessageEvent",
   "DedicatedWorkerGlobalScope",
-  "Storage",
-  "SessionStorage"
+  "Storage"
 ]
