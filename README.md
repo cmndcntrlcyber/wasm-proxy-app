@@ -1,12 +1,12 @@
-# WASM Proxy Application
+# WASM Proxy Application for rust-run
 
-A WebAssembly application that executes a .bin file as a child process and proxies the output traffic using HTTPS.
+A WebAssembly application that executes the `../rust-run/` binary file and proxies its output through a web interface.
 
 ## Features
 
-- Execute binary files from a web interface
-- Process binary output in WebAssembly
-- Proxy the output via secure HTTPS connection
+- Execute the rust-run binary from a web interface
+- Proxy and display the command output in real-time
+- Track execution status and handle errors
 - Simple and intuitive user interface
 
 ## Prerequisites
@@ -14,7 +14,16 @@ A WebAssembly application that executes a .bin file as a child process and proxi
 - [Node.js](https://nodejs.org/) (v14 or later)
 - [Rust](https://www.rust-lang.org/tools/install)
 - [wasm-pack](https://rustwasm.github.io/wasm-pack/installer/)
-- [OpenSSL](https://www.openssl.org/) (for generating SSL certificates)
+- Python 3.x (for running the simple HTTP server)
+
+## Project Structure
+
+- **src/lib.rs**: WASM module that interfaces with the rust-run binary
+- **ws_bridge.js**: WebSocket bridge for communication with the proxy server
+- **proxy_server.py**: Python-based server that executes the rust-run binary
+- **index.html & index.js**: Web UI for user interaction
+- **mock_wasm.js**: Mock implementation for testing without the actual WASM module
+- **build.py**: Script to build and set up the project
 
 ## Installation
 
@@ -25,86 +34,76 @@ git clone <repository-url>
 cd wasm-proxy-app
 ```
 
-2. Install Node.js dependencies:
+2. Make sure the rust-run project is properly set up in the parent directory:
 
 ```bash
-npm install
-```
+# Check if rust-run project exists
+ls ../rust-run
 
-3. Generate SSL certificates for HTTPS:
-
-```bash
-mkdir -p certs
-cd certs
-openssl genrsa -out key.pem 2048
-openssl req -new -key key.pem -out csr.pem
-openssl x509 -req -days 365 -in csr.pem -signkey key.pem -out cert.pem
-rm csr.pem
-cd ..
+# If needed, build the rust-run project
+cd ../rust-run
+cargo build --release
+cd ../wasm-proxy-app
 ```
 
 ## Building the Application
 
-1. Build the Rust WASM module:
+Run the build script which will:
+- Check for the rust-run executable
+- Build the Rust WASM module
+- Create the proxy server script
+- Set up the mock implementation for testing
 
 ```bash
-wasm-pack build --target web
-```
-
-2. Bundle the application with webpack:
-
-```bash
-npx webpack --config webpack.config.js
-```
-
-Alternatively, you can use the npm script:
-
-```bash
-npm run build
+python build.py
 ```
 
 ## Running the Application
 
-Start the server:
+1. Start the proxy server:
 
 ```bash
-npm start
+python proxy_server.py
 ```
 
-This will start:
-- An HTTP server on port 3000 for the main application
-- An HTTPS server on port 3001 for the proxy
+2. In a separate terminal, start the HTTP server:
 
-Open your browser and navigate to:
+```bash
+python -m http.server 8080
+```
+
+3. Open your browser and navigate to:
 
 ```
-http://localhost:3000
+http://localhost:8080
 ```
 
 ## Usage
 
-1. Enter the path to the binary file you want to execute
-2. Add any arguments required by the binary (one per line)
-3. Specify the HTTPS proxy URL (default is https://localhost:3001/proxy)
-4. Click "Execute and Proxy"
-5. View the results in the output section
+1. Open the web application in your browser
+2. Click "Execute rust-run" to start the process
+3. View the real-time output in the output section
+4. Check the status indicator for execution progress
 
-## Security Considerations
+## How It Works
 
-- This application executes binaries on the server, which can be a security risk if not properly controlled
-- In a production environment, you should:
-  - Implement proper authentication and authorization
-  - Restrict which binaries can be executed
-  - Use proper SSL certificates instead of self-signed ones
-  - Add input validation and sanitization
+1. The web application initiates execution through the WASM module
+2. The WASM module communicates with the proxy server via a WebSocket bridge
+3. The proxy server executes the rust-run binary
+4. Output from the binary is captured and streamed back to the web UI
+5. Real-time updates are displayed to the user
 
-## Architecture
+## Development
 
-The application consists of:
+For development and testing without building the WASM module:
+- The project includes a mock implementation (mock_wasm.js)
+- This allows for testing the UI and flow without executing the actual binary
 
-1. **Rust WASM Module**: Handles the communication between the browser and the server
-2. **Node.js Server**: Executes the binary files and serves the web application
-3. **HTTPS Proxy Server**: Securely transmits the binary output
+## Troubleshooting
+
+- **Proxy Server Issues**: Make sure the Python proxy server is running on port 3000
+- **WASM Module Errors**: Check the browser console for detailed error messages
+- **rust-run Binary Issues**: Ensure the binary exists and has execution permissions
 
 ## License
 

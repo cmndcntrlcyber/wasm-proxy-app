@@ -1,2 +1,5 @@
-certs/cert.pem
-certs/key.pem
+node_modules/*
+certs/*.pem
+target/*
+Cargo.lock
+package-lock.json
